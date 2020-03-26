@@ -1,0 +1,585 @@
+---
+title: "Covid19"
+author: "David Jimeno"
+date: "22/3/2020"
+output: pdf_document
+---
+
+# En este estudio queremos tener una visión por escalas desde
+# nuestra Comunidad Autónoma Aragón, pasando a nivel nacional 
+# para finalmente hacer un análisis internacional.
+# Queremos entender el virus, su comportamiento e incidencia
+# por edades, países y la reacción tomada por cada uno de ellos
+# en tiempo y forma.
+
+```{r setup, include=FALSE}
+if(!require(flexdashboard)) install.packages("flexdashboard", repos = "http://cran.us.r-project.org")
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(highcharter)) install.packages("highcharter", repos = "http://cran.us.r-project.org")
+if(!require(countrycode)) install.packages("countrycode", repos = "http://cran.us.r-project.org")
+if(!require(janitor)) install.packages("janitor", repos = "http://cran.us.r-project.org")
+if(!require(ggthemes)) install.packages("ggthemes", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+if(!require(leaflet)) install.packages("leaflet", repos = "http://cran.us.r-project.org")
+if(!require(dslabs)) install.packages("dslabs", repos = "http://cran.us.r-project.org")
+if(!require(gridExtra)) install.packages("gridExtra", repos = "http://cran.us.r-project.org")
+```
+
+## Veamos la evolucíon de fallecidos diarios en Aragón.
+```{r global, warning=FALSE, include=FALSE}
+covar <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_fallecidos_long.csv")
+covar$fecha <- as.Date( covar$fecha, "%d/%m/%Y")
+covar <- covar%>% filter(CCAA == "Aragon") 
+covar$Fallecimientos.nuevos <- c( NA, diff(covar$total))
+
+```
+
+```{r global, warning=FALSE}
+ggplot(covar,aes(x=fecha,y=Fallecimientos.nuevos),na.rm =TRUE)+geom_line()+theme_tufte()
+
+```
+
+## Veamos a continuación la evolución en la Comunidad de Madrid.
+```{r global, warning=FALSE, include=FALSE}
+covar <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_fallecidos_long.csv")
+covar$fecha <- as.Date( covar$fecha, "%d/%m/%Y")
+covar <- covar%>% filter(CCAA == "Madrid") 
+covar$Fallecimientos.nuevos <- c( NA, diff(covar$total))
+
+```
+```{r global, warning=FALSE}
+ggplot(covar,aes(x=fecha,y=Fallecimientos.nuevos),na.rm =TRUE)+geom_line()+theme_tufte()
+
+```
+
+```{r global, warning=FALSE}
+covsp <- read_csv("Data Science/Covid19/Kaggle/nacional_covid19.csv")
+covsp$fecha <- as.Date( covsp$fecha, "%d/%m/%Y")
+covsp$Casos.nuevos <- c( NA, diff(covsp$casos))
+covsp$Altas.nuevas <- c( NA, diff(covsp$altas))
+covsp$Fallecimientos.nuevos <- c( NA, diff(covsp$fallecimientos))
+
+```
+
+
+
+
+## Ahora continuaremos con el analisis a nivel nacional.
+
+### Nuevos casos diarios a nivel nacional.
+```{r altas, warning=FALSE}
+ggplot(covsp,aes(x=fecha,y=Casos.nuevos),na.rm = TRUE)+geom_line()+theme_tufte()
+```
+
+### Las nuevas altas por día.
+
+```{r altas, warning=FALSE}
+ggplot(covsp,aes(x=fecha,y=Altas.nuevas),na.rm = TRUE)+geom_line()+theme_tufte()
+```
+
+
+### Los nuevos fallecimientos por día.
+
+```{r fallecimientos, warning=FALSE}
+ggplot(covsp,aes(x=fecha,y=Fallecimientos.nuevos),na.rm = TRUE)+geom_line()+theme_tufte()
+```
+```{r edadrango , warning=FALSE}
+
+covedad <- read_csv("Data Science/Covid19/Kaggle/nacional_covid19_rango_edad.csv")
+
+covedad$fecha <- as.Date( covedad$fecha, "%m/%d/%Y")
+sex <- "ambos sexos"
+tr <- covedad %>% group_by(rango_edad)%>% filter(sexo %in% sex & rango_edad != "Total" )
+
+ r <- tr %>% ggplot(aes(rango_edad, fallecidos, group=1))+
+  geom_line() + 
+   labs(title =  "Máximos fallecidos diarios por rango de edades")
+ 
+ 
+
+sex <- "hombres"
+tr <- covedad %>% group_by(rango_edad)%>% filter(sexo %in% sex & rango_edad != "Total" )
+
+h <- tr  %>% ggplot(aes(rango_edad, fallecidos, group=1))+
+  geom_line()+ 
+  labs(title =  "Máximos fallecidos diarios hombres por rango de edades")
+ 
+ 
+sex <- "mujeres"
+tr <- covedad %>% group_by(rango_edad)%>% filter(sexo %in% sex & rango_edad != "Total" )
+
+m <- tr %>% ggplot(aes(rango_edad, fallecidos, group=1))+
+  geom_line()+ 
+  labs(title =  "Máximos fallecidos diarios mujeres por rango de edades")
+ 
+ 
+ grid.arrange(h, m, r, ncol = 1)
+
+   
+ 
+ 
+```
+
+
+```{r global, include=FALSE}
+corona <- read_csv("Data Science/Covid19/Kaggle/covid_19_data.csv")
+```
+
+```{r latest, include=FALSE}
+corona_latest <- corona %>% 
+filter(ObservationDate %in% max(corona$ObservationDate))
+```
+
+
+
+Summary
+=======================================================================
+
+Row {.bg-secondary }
+-----------------------------------------------------------------------
+
+```{r}
+total_cases <- sum(corona_latest$Confirmed)
+```
+
+### `r paste0("Total Confirmed Cases : ", max(corona$ObservationDate))` 
+
+```{r}
+confirmados <- sum(corona_latest$Confirmed) #computeContactRate()
+gauge(confirmados, min = 0, max = sum(corona_latest$Confirmed), gaugeSectors(
+ success = c(600000,1000000), warning = c(300000, 599000), danger = c(0,299000)
+ ))
+```
+
+### Recuperados
+
+```{r}
+recuperados <- sum(corona_latest$Recovered)  #computeAverageRating()
+gauge(recuperados, min = 0, max = sum(corona_latest$Confirmed), gaugeSectors(
+ success = c(80, 100), warning = c(40, 79), danger = c(0, 39)
+ ))
+```
+
+### Muertos 
+
+```{r}
+muertos <- sum(corona_latest$Deaths) # computeCancellations()
+gauge(muertos, min = 0, max = sum(corona_latest$Confirmed), gaugeSectors(
+ success = c(80, 100), warning = c(40, 79), danger = c(0, 39)
+ ))
+```
+
+Countries
+-----------------------------------------------------------------------
+```{r}
+
+data(worldgeojson, package = "highcharter")
+
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "Mainland China"] = "China"
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "US"] = "United States of America"
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom of Great Britain and Nothern Ireland"
+corona_latest %>% 
+  janitor::clean_names() %>% 
+  filter(!country_region %in% 'Others') %>% 
+  group_by(country_region) %>% 
+  summarise(total_confirmed = sum(confirmed)) %>% 
+  filter(total_confirmed > 0) %>% 
+  mutate(log_total_confirmed = log(total_confirmed)) -> countries
+
+highchart() %>%
+  hc_add_series_map(worldgeojson, countries, value = 'log_total_confirmed', joinBy = c('name','country_region'))  %>% 
+  #hc_colors(c("darkorange", "darkgray")) %>% 
+  hc_colorAxis(stops = color_stops()) %>% 
+  hc_title(text = "Países con exposición a Covid19") %>% 
+  hc_subtitle(text = 'con Log del Total Confirmados') 
+```
+
+
+Row 
+-----------------------------------------------------------------------
+
+Region
+=======================================================================
+
+Column
+-----------------------------------------------------------------------
+
+### Confirmados por países.
+
+```{r}
+corona_latest %>% 
+  filter(!`Country/Region` %in% 'Others') %>% 
+  group_by(`Country/Region`) %>% 
+  summarise(total_confirmed = sum(Confirmed)) %>% 
+  arrange(desc(total_confirmed)) %>% 
+  head(10) %>% 
+  hchart("bar",hcaes(x = `Country/Region`,  y =total_confirmed)) %>%
+  hc_add_theme(hc_theme_darkunica())
+
+```
+
+Column
+-----------------------------------------------------------------------```
+-----------------------------------------------------------------------
+### Fallecidos por países.
+```{r}
+ corona28 <- corona_latest
+corona28_country <- corona28  %>% 
+group_by(`Country/Region`)  %>% 
+summarize(total_death = sum(Deaths),
+         total_recovered = sum(Recovered),
+         total_confirmed = sum(Confirmed))  %>% 
+mutate(recovery_rate = round(total_recovered / total_confirmed,2))
+corona28_country  %>% 
+filter(!`Country/Region` %in% 'Others')  %>% 
+arrange(desc(total_death)) %>% 
+head(11)  %>%
+ggplot() + geom_bar(aes(`Country/Region`, total_death), stat = "identity") +
+geom_label(aes(`Country/Region`, total_death, label = total_death)) +
+coord_flip() +
+theme_minimal() +
+labs(title =  "Principales países por total de casos fallecidos",
+    caption = "Fuente: Kaggle")
+```
+
+
+```{r}
+corona_latest %>% 
+  filter(!`Country/Region` %in% 'Others') %>% 
+  group_by(`Country/Region`) %>% 
+  summarise(total_fallecidos = sum(Deaths)) %>% 
+  arrange(desc(total_fallecidos)) %>% 
+  head(10) %>% 
+  hchart("bar",hcaes(x = `Country/Region`,  y =total_fallecidos)) %>%
+  hc_add_theme(hc_theme_darkunica())
+
+```
+
+Column
+-----------------------------------------------------------------------```
+-----------------------------------------------------------------------
+### Por confirmados
+
+```{r}
+corona %>% 
+  group_by(ObservationDate) %>% 
+  summarise(total_count = max(Confirmed)) %>% 
+  hchart("line",hcaes(x = ObservationDate, y = total_count)) %>% 
+  hc_title(text = "Tendencia lineal de COVID-19 confirmados max país") %>% 
+  hc_add_theme(hc_theme_538())
+
+```
+
+### Por recuperados
+
+```{r}
+corona %>% 
+  group_by(ObservationDate) %>% 
+  summarise(total_count = max(Recovered)) %>% 
+  hchart("line",hcaes(x = ObservationDate, y = total_count)) %>% 
+  hc_title(text = "Tendencia lineal Covid 19 Recuperados max por país") %>% 
+  hc_add_theme(hc_theme_538())
+```
+
+
+### Por fallecidos
+
+```{r}
+corona %>% 
+  group_by(ObservationDate) %>% 
+  summarise(total_count = max(Deaths)) %>% 
+  hchart("line",hcaes(x = ObservationDate, y = total_count)) %>% 
+  hc_title(text = "Tendencia lineal Covid19 fallecidos max país") %>% 
+  hc_add_theme(hc_theme_538())
+
+```
+```{r}
+# lodaing Datasets
+df <- read.csv("Data Science/Covid19/Kaggle/covid_19_data.csv")
+df <- df %>% rename(
+  Date = ObservationDate,
+  Country = Country.Region,
+  State = Province.State,
+  Last_Update = Last.Update
+  )
+df$Date <- as.Date(df$Date, format = "%m/%d/%y")
+df_confirmed = read_csv("Data Science/Covid19/Kaggle/time_series_covid_19_confirmed.csv")
+
+df_confirmed <- df_confirmed %>% rename(
+  Country = 'Country/Region',
+)
+#head(df_confirmed)
+df_recovered = read_csv("Data Science/Covid19/Kaggle//time_series_covid_19_recovered.csv")
+
+df_recovered <- df_recovered %>% rename(
+  Country = `Country/Region`,
+)
+#head(df_recovered)
+df_deaths = read_csv("Data Science/Covid19/Kaggle/time_series_covid_19_deaths.csv")
+
+
+df_deaths <- df_deaths %>% rename(
+  Country = `Country/Region`,
+)
+#head(df_deaths)
+
+
+filtered <- filter(df, df$Date==max(df$Date)) %>% group_by(Country) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths) , Recovered = sum(Recovered))
+filtered <- filtered[order(filtered$Confirmed,decreasing = TRUE),]
+filtered[0:15,]
+#bar Plot
+fig <- function(width, heigth){
+     options(repr.plot.width = width, repr.plot.height = heigth)
+}
+```
+
+```{r}
+fig(20, 10)
+
+China <- filter(df,Country == "Mainland China") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+
+#Line Plot
+China_plot<- ggplot(China, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "China's COVID-19 Status", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 25),
+                 text = element_text(hjust = 1,face = "bold", size = 25),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+China_plot
+```
+```{r}
+fig(20, 10)
+italy <- filter(df,Country == "Italy") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+
+
+
+#Line Plot
+Italy_plot <- ggplot(italy, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Italy's COVID-19 Status", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 25),
+                 text = element_text(hjust = 1,face = "bold", size = 25),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+Italy_plot
+```
+
+```{r}
+fig(20, 10)
+US <- filter(df,Country == "US") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+
+
+
+#Line Plot
+US_plot <- ggplot(US, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "US's COVID-19 Status", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 25),
+                 text = element_text(hjust = 1,face = "bold", size = 25),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+US_plot
+```
+
+```{r}
+fig(20, 10)
+Spain <- filter(df,Country == "Spain") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+
+
+
+#Line Plot
+Spain_plot <- ggplot(Spain, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Spain's COVID-19 Status", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 25),
+                 text = element_text(hjust = 1,face = "bold", size = 25),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+Spain_plot
+```
+
+```{r}
+fig(20, 10)
+Iran <- filter(df,Country == "Iran") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+
+
+
+#Line Plot
+Iran_plot <- ggplot(Iran, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Iran's COVID-19 Status", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 25),
+                 text = element_text(hjust = 1,face = "bold", size = 25),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+Iran_plot
+```
+
+```{r}
+fig(20, 10)
+UK <- filter(df,Country == "UK") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+
+
+
+#Line Plot
+UK_plot <- ggplot(UK, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "UK's COVID-19 Status", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 25),
+                 text = element_text(hjust = 1,face = "bold", size = 25),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+UK_plot
+```
+
+```{r}
+fig(20, 10)
+Germany <- filter(df,Country == "Germany") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+
+
+
+#Line Plot
+Germany_plot <- ggplot(Germany, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Germany's COVID-19 Status", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 25),
+                 text = element_text(hjust = 1,face = "bold", size = 25),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+Germany_plot
+```
+
+
+
+```{r}
+fig(12, 8)
+data <- filter(df_deaths,df_deaths[,ncol(df_deaths)]>0)
+world <- ggplot() +
+  borders("world", colour = "gray85", fill = "gray80") +theme_map()
+map_death <- world +
+  geom_point(aes(x = data$Long, y = data$Lat, size = as.integer(unlist(data[,ncol(df_deaths)]))),
+             data = data, 
+             colour = 'red', alpha = .5) +
+  scale_size_continuous(range = c(1, 15), 
+                        breaks = c(250, 500, 750, 1000)) +
+  labs(size = 'Cases Count')+   theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 25),
+         text = element_text(hjust = 1,face = "bold", size = 20))
+map_death
+```
+### Por confirmados
+
+```{r}
+
+data(worldgeojson, package = "highcharter")
+
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "Mainland China"] = "China"
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "US"] = "United States of America"
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom of Great Britain and Nothern Ireland"
+corona_latest %>% 
+  janitor::clean_names() %>% 
+  filter(!country_region %in% 'Others') %>% 
+  group_by(country_region) %>% 
+  summarise(total_confirmed = sum(confirmed)) %>% 
+  filter(total_confirmed > 0) %>% 
+  mutate(log_total_confirmed = log(total_confirmed)) -> countries
+
+highchart() %>%
+  hc_add_series_map(worldgeojson, countries, value = 'total_confirmed', joinBy = c('name','country_region'))  %>% 
+  #hc_colors(c("darkorange", "darkgray")) %>% 
+  hc_colorAxis(stops = color_stops()) %>% 
+  hc_title(text = "Países con exposición a Covid19") %>% 
+  hc_subtitle(text = 'con total confirmado - Cifras reales')
+```
+
+### Por recuperados
+
+```{r}
+
+data(worldgeojson, package = "highcharter")
+
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "Mainland China"] = "China"
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "US"] = "United States of America"
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom of Great Britain and Nothern Ireland"
+corona_latest %>% 
+  janitor::clean_names() %>% 
+  filter(!country_region %in% 'Others') %>% 
+  group_by(country_region) %>% 
+  summarise(total_recovered = sum(recovered)) %>% 
+  filter(total_recovered > 0)  -> countries
+
+highchart() %>%
+  hc_add_series_map(worldgeojson, countries, value = 'total_recovered', joinBy = c('name','country_region'))  %>% 
+  #hc_colors(c("darkorange", "darkgray")) %>% 
+  hc_colorAxis(stops = color_stops()) %>% 
+  hc_title(text = "Países con exposición a Covid19") %>% 
+  hc_subtitle(text = 'con Total Recuperados - Cifras')
+```
+
+
+### Por fallecidos.
+
+```{r}
+
+data(worldgeojson, package = "highcharter")
+
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "Mainland China"] = "China"
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "US"] = "United States of America"
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom"
+
+corona_latest %>% 
+  janitor::clean_names() %>% 
+  filter(!country_region %in% 'Others') %>% 
+  group_by(country_region) %>% 
+  summarise(total_deaths = sum(deaths)) %>% 
+  filter(total_deaths > 0) -> countries
+
+highchart() %>%
+  hc_add_series_map(worldgeojson, countries, value = 'total_deaths', joinBy = c('name','country_region'))  %>% 
+  #hc_colors(c("darkorange", "darkgray")) %>% 
+  hc_colorAxis(stops = color_stops()) %>% 
+  hc_title(text = "Países con exposición a Covid19") %>% 
+  hc_subtitle(text = 'con muertes totales - Cifras reales')
+```
+
+
+
+Links
+====================
+### Gracias especialmente a datadista por mantener base de datos actualizada del Ministerio de Sanidad.(https://github.com/datadista/datasets/tree/master/COVID%2019)
++ [Map tracks coronavirus outbreak in near real time](https://hub.jhu.edu/2020/01/23/coronavirus-outbreak-mapping-tool-649-em1-art1-dtd-health/)
++ [Coronavirus COVID-19 Global Cases by Johns Hopkins CSSE](https://www.arcgis.com/apps/opsdashboard/index.html#/bda7594740fd40299423467b48e9ecf6)
++ [Coronavirus disease (COVID-19) outbreak - WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019)
++ [coronavirus R package provides a tidy format dataset](https://github.com/RamiKrispin/coronavirus)
++ [An AI Epidemiologist Sent the First Warnings of the Wuhan Virus](https://www.wired.com/story/ai-epidemiologist-wuhan-public-health-warnings/)
