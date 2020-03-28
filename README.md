@@ -1,2 +1,2 @@
 # covid_19
-global pandemic study
+Estudio global de la pandemia
