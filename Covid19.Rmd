@@ -53,6 +53,14 @@ covar$Fallecimientos.nuevos <- c( NA, diff(covar$total))
 ggplot(covar,aes(x=fecha,y=Fallecimientos.nuevos),na.rm =TRUE)+geom_line()+theme_tufte()
 
 ```
+```{r Incremento, include=FALSE}
+ccaa_covid19_fallecidos_long <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_fallecidos_long.csv")
+```
+```{r Incremento2}
+ccaa_covid19_fallecidos_long <- ccaa_covid19_fallecidos_long %>% filter( CCAA == "Total")
+ggplot(data=ccaa_covid19_fallecidos_long, aes(x = fecha,y = Incremento)) + 
+  geom_bar(stat="identity", position="dodge")
+```
 
 ```{r nacional_covid19, warning=FALSE,, include=FALSE}
 covsp <- read_csv("Data Science/Covid19/Kaggle/nacional_covid19.csv")
@@ -520,7 +528,7 @@ data(worldgeojson, package = "highcharter")
 
 corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "Mainland China"] = "China"
 corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "US"] = "United States of America"
-corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom of Great Britain and Nothern Ireland"
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom of Great Britain and Northern Ireland"
 
 corona_latest %>% 
   janitor::clean_names() %>% 
