@@ -1,16 +1,19 @@
 ---
 title: "Covid19"
 author: "David Jimeno"
-date: "22/3/2020"
+date: "5/4/2020"
 output: html_document
 ---
 
-# En este estudio queremos tener una visión por escalas desde
-# nuestra Comunidad Autónoma Aragón, pasando a nivel nacional 
-# para finalmente hacer un análisis internacional.
-# Queremos entender el virus, su comportamiento e incidencia
-# por edades, países y la reacción tomada por cada uno de ellos
-# en tiempo y forma.
+## En este estudio queremos tener una visión por escalas desde
+## nuestra Comunidad Autónoma Aragón, pasando a nivel nacional 
+## para finalmente hacer un análisis internacional.
+## Queremos entender el virus, su comportamiento e incidencia
+## por países y la visualización de datos de cada uno de ellos
+## en el tiempo.
+
+## Lamentablemente nos centraremos en la mayor parte del estudio en los fallecidos que a pesar ## de proporcionar cifras con retraso, son más fiables que las de contagios detectados de los 
+## que se estima que se detecta a nivel nacional una fracción inferior al 10%.
 
 ```{r setup, include=FALSE}
 if(!require(flexdashboard)) install.packages("flexdashboard", repos = "http://cran.us.r-project.org")
@@ -37,7 +40,8 @@ covar$Fallecimientos.nuevos <- c( NA, diff(covar$total))
 ```
 
 ```{r fallecidos diarios en Aragón, warning=FALSE}
-ggplot(covar,aes(x=fecha,y=Fallecimientos.nuevos),na.rm =TRUE)+geom_line()+theme_tufte()
+ggplot(covar,aes(x=fecha,y=Fallecimientos.nuevos),na.rm =TRUE)+geom_line()+theme_tufte()+
+  ggtitle( "Evolucíon de fallecidos diarios en Aragón")
 
 ```
 
@@ -50,16 +54,37 @@ covar$Fallecimientos.nuevos <- c( NA, diff(covar$total))
 
 ```
 ```{r global2, warning=FALSE}
-ggplot(covar,aes(x=fecha,y=Fallecimientos.nuevos),na.rm =TRUE)+geom_line()+theme_tufte()
+ggplot(covar,aes(x=fecha,y=Fallecimientos.nuevos),na.rm =TRUE)+geom_line()+theme_tufte()+
+  ggtitle( "Fallecimientos diarios nuevos en la Comunidad de Madrid")
 
 ```
 ```{r Incremento, include=FALSE}
 ccaa_covid19_fallecidos_long <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_fallecidos_long.csv")
+ccaa_covid19_fallecidos_long$Incremento <- c( NA,diff(ccaa_covid19_fallecidos_long$total))
+ccaa_covid19_fallecidos_long[ccaa_covid19_fallecidos_long < 0] <- NA
+ccaa_covid19_fallecidos_long<-na.omit(ccaa_covid19_fallecidos_long)
 ```
 ```{r Incremento2}
 ccaa_covid19_fallecidos_long <- ccaa_covid19_fallecidos_long %>% filter( CCAA == "Total")
 ggplot(data=ccaa_covid19_fallecidos_long, aes(x = fecha,y = Incremento)) + 
-  geom_bar(stat="identity", position="dodge")
+  geom_bar(stat="identity", position="dodge")+
+  ggtitle( "Fallecimientos diarios en España") 
+```
+```{r global2, include=FALSE}
+covca <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_fallecidos_long.csv")
+covca$fecha <- as.Date( covca$fecha, "%d/%m/%Y")
+covca$Fallecimientos.nuevos <- c( NA, diff(covca$total))
+covca[covca < 0] <- NA
+```
+
+```{r global2, warning=FALSE}
+covca<-na.omit(covca)
+ggplot(covca, aes(fecha,Fallecimientos.nuevos,group = 1)) +
+  geom_line() +
+  facet_wrap(vars(CCAA), scales = "free_y", ncol = 3, strip.position = "top") +
+  theme(strip.background = element_blank(), strip.placement = "outside")+
+  ggtitle( "Fallecimientos diarios comparativa por Comunidades Autónomas y Total") 
+
 ```
 
 ```{r nacional_covid19, warning=FALSE,, include=FALSE}
@@ -78,22 +103,24 @@ covsp$Fallecimientos.nuevos <- c( NA, diff(covsp$fallecimientos))
 
 ### Nuevos casos diarios a nivel nacional.
 ```{r casos, warning=FALSE}
-ggplot(covsp,aes(x=fecha,y=Casos.nuevos),na.rm = TRUE)+geom_line()+theme_tufte()
+ggplot(covsp,aes(x=fecha,y=Casos.nuevos),na.rm = TRUE)+geom_line()+theme_tufte()+
+  ggtitle( "Nuevos casos diarios a nivel nacional") 
 ```
 
 ### Las nuevas altas diarias en España.
 
 ```{r altas, warning=FALSE}
-ggplot(covsp,aes(x=fecha,y=Altas.nuevas),na.rm = TRUE)+geom_line()+theme_tufte()
+ggplot(covsp,aes(x=fecha,y=Altas.nuevas),na.rm = TRUE)+geom_line()+theme_tufte()+
+  ggtitle( "Nuevas altas diarias en España") 
 ```
 
 
 ### Los nuevos fallecimientos por día España.
 
 ```{r fallecimientos por día España, warning=FALSE}
-ggplot(covsp,aes(x=fecha,y=Fallecimientos.nuevos),na.rm = TRUE)+geom_line()+theme_tufte()
+ggplot(covsp,aes(x=fecha,y=Fallecimientos.nuevos),na.rm = TRUE)+geom_line()+theme_tufte()+
+ggtitle( "Nuevos fallecimientos por día España")   
 ```
-
 
 
 ```{r covid_19_data, include=FALSE}
@@ -152,11 +179,12 @@ gauge((muertos/confirmados)*100, min = 0, max=100, gaugeSectors(
 ### Paises expuestos a Covid19 Total confirmados.
 ```{r Covid19 Total confirmados}
 
+
 data(worldgeojson, package = "highcharter")
 
 corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "Mainland China"] = "China"
 corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "US"] = "United States of America"
-corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom of Great Britain and Northern Ireland"
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom"
 
 corona_latest %>% 
   janitor::clean_names() %>% 
@@ -172,7 +200,8 @@ highchart() %>%
   #hc_colors(c("darkorange", "darkgray")) %>% 
   hc_colorAxis(stops = color_stops()) %>% 
   hc_title(text = "Países con exposición a Covid19") %>% 
-  hc_subtitle(text = ' Total Confirmados') 
+  hc_subtitle(text = ' Total Confirmados')
+
 ```
 
 
@@ -222,7 +251,8 @@ corona_latest %>%
   arrange(desc(total_fallecidos)) %>% 
   head(10) %>% 
   hchart("bar",hcaes(x = `Country/Region`,  y =total_fallecidos)) %>%
-  hc_add_theme(hc_theme_darkunica())
+  hc_add_theme(hc_theme_darkunica())%>%
+  hc_title(text="Total fallecidos por paises")
 
 ```
 
@@ -230,11 +260,12 @@ corona_latest %>%
 ### Por confirmados.
 
 ```{r,Por confirmados}
+
 corona %>% 
   group_by(ObservationDate) %>% 
-  summarise(total_count = max(Confirmed)) %>% 
+  summarise(total_count = max(Confirmed)) %>%
   hchart("line",hcaes(x = ObservationDate, y = total_count)) %>% 
-  hc_title(text = "Tendencia lineal de COVID-19 confirmados max país") %>% 
+  hc_title(text = "Tendencia lineal de COVID-19 confirmados max día") %>% 
   hc_add_theme(hc_theme_538())
 
 ```
@@ -246,7 +277,7 @@ corona %>%
   group_by(ObservationDate) %>% 
   summarise(total_count = max(Recovered)) %>% 
   hchart("line",hcaes(x = ObservationDate, y = total_count)) %>% 
-  hc_title(text = "Tendencia lineal Covid 19 Recuperados max por país") %>% 
+  hc_title(text = "Tendencia lineal Covid 19 Recuperados max por día") %>% 
   hc_add_theme(hc_theme_538())
 ```
 
@@ -258,7 +289,7 @@ corona %>%
   group_by(ObservationDate) %>% 
   summarise(total_count = max(Deaths)) %>% 
   hchart("line",hcaes(x = ObservationDate, y = total_count)) %>% 
-  hc_title(text = "Tendencia lineal Covid19 fallecidos max país") %>% 
+  hc_title(text = "Tendencia lineal Covid19 fallecidos max día") %>% 
   hc_add_theme(hc_theme_538())
 
 ```
@@ -305,7 +336,8 @@ filtered[0:10,]
 
 ```{r murder_rate}
 ggplot(data=filtered, aes(x=reorder(Country,-murder_rate), y=murder_rate)) + 
-    geom_bar(stat="identity", position="dodge")
+    geom_bar(stat="identity", position="dodge")+
+ ggtitle("Letalidad por país")
 ```
 
 ```{r fig(14, 10) }
@@ -466,8 +498,8 @@ map_death <- world +
              colour = 'red', alpha = .5) +
   scale_size_continuous(range = c(1, 15), 
                         breaks = c(250, 500, 750, 1000)) +
-  labs(size = 'Casos confirmados')+   theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 25),
-         text = element_text(hjust = 1,face = "bold", size = 20))
+  labs(size = 'Casos confirmados')+   theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 10),
+         text = element_text(hjust = 1,face = "bold", size = 10))
 map_death
 ```
 ### Por confirmados
@@ -478,7 +510,7 @@ data(worldgeojson, package = "highcharter")
 
 corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "Mainland China"] = "China"
 corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "US"] = "United States of America"
-corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom of Great Britain and Nothern Ireland"
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom"
 corona_latest %>% 
   janitor::clean_names() %>% 
   filter(!country_region %in% 'Others') %>% 
@@ -503,7 +535,7 @@ data(worldgeojson, package = "highcharter")
 
 corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "Mainland China"] = "China"
 corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "US"] = "United States of America"
-corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom of Great Britain and Nothern Ireland"
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom"
 corona_latest %>% 
   janitor::clean_names() %>% 
   filter(!country_region %in% 'Others') %>% 
@@ -528,7 +560,7 @@ data(worldgeojson, package = "highcharter")
 
 corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "Mainland China"] = "China"
 corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "US"] = "United States of America"
-corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom of Great Britain and Northern Ireland"
+corona_latest$`Country/Region`[corona_latest$`Country/Region`  == "UK"] = "United Kingdom"
 
 corona_latest %>% 
   janitor::clean_names() %>% 
@@ -551,7 +583,21 @@ Links
 ====================
 ### Gracias especialmente a datadista por mantener base de datos actualizada del 
 ### Ministerio de Sanidad.
-### (https://github.com/datadista/datasets/tree/master/COVID%2019)
+
+### Enlaces a bases de datos.
+
+### https://www.kaggle.com/sudalairajkumar/novel-corona-virus-2019-dataset/download/uMF6QnlPB7ScS6BxTw1I%2Fversions%2FXDJvWcErFIHv3R7zGrDD%2Ffiles%2Fcovid_19_data.csv?datasetVersionNumber=56
+
+### https://www.kaggle.com/sudalairajkumar/novel-corona-virus-2019-dataset/download/uMF6QnlPB7ScS6BxTw1I%2Fversions%2FXDJvWcErFIHv3R7zGrDD%2Ffiles%2Ftime_series_covid_19_confirmed.csv?datasetVersionNumber=56
+
+### https://www.kaggle.com/sudalairajkumar/novel-corona-virus-2019-dataset/download/uMF6QnlPB7ScS6BxTw1I%2Fversions%2FXDJvWcErFIHv3R7zGrDD%2Ffiles%2Ftime_series_covid_19_deaths.csv?datasetVersionNumber=56
+
+### https://www.kaggle.com/sudalairajkumar/novel-corona-virus-2019-dataset/download/uMF6QnlPB7ScS6BxTw1I%2Fversions%2FXDJvWcErFIHv3R7zGrDD%2Ffiles%2Ftime_series_covid_19_recovered.csv?datasetVersionNumber=56
+
+### https://raw.githubusercontent.com/datadista/datasets/master/COVID%2019/ccaa_covid19_fallecidos_long.csv
+
+### https://raw.githubusercontent.com/datadista/datasets/master/COVID%2019/ccaa_covid19_fallecidos_long.csv
+
 + [Map tracks coronavirus outbreak in near real time](https://hub.jhu.edu/2020/01/23/coronavirus-outbreak-mapping-tool-649-em1-art1-dtd-health/)
 + [Coronavirus COVID-19 Global Cases by Johns Hopkins CSSE](https://www.arcgis.com/apps/opsdashboard/index.html#/bda7594740fd40299423467b48e9ecf6)
 + [Coronavirus disease (COVID-19) outbreak - WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019)
