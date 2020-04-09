@@ -39,6 +39,7 @@ covar$Fallecimientos.nuevos <- c( NA, diff(covar$total))
 
 ```
 
+
 ```{r fallecidos diarios en Aragón, warning=FALSE}
 ggplot(covar,aes(x=fecha,y=Fallecimientos.nuevos),na.rm =TRUE)+geom_line()+theme_tufte()+
   ggtitle( "Evolucíon de fallecidos diarios en Aragón")
@@ -70,6 +71,23 @@ ggplot(data=ccaa_covid19_fallecidos_long, aes(x = fecha,y = Incremento)) +
   geom_bar(stat="identity", position="dodge")+
   ggtitle( "Fallecimientos diarios en España") 
 ```
+```{r globaluci, include=FALSE}
+covca <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_uci_long.csv")
+covca$fecha <- as.Date( covca$fecha, "%d/%m/%Y")
+covca$Ucis.nuevos <- c( NA, diff(covca$total))
+covca[covca < 0] <- NA
+```
+
+```{r globaluci2, warning=FALSE}
+covca<-na.omit(covca)
+ggplot(covca, aes(fecha,Ucis.nuevos,group = 1)) +
+  geom_line() +
+  facet_wrap(vars(CCAA), scales = "free_y", ncol = 3, strip.position = "top") +
+  theme(strip.background = element_blank(), strip.placement = "outside")+
+  ggtitle( "Ingresos Ucis diarios comparativa por Comunidades Autónomas") 
+
+```
+
 ```{r global2, include=FALSE}
 covca <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_fallecidos_long.csv")
 covca$fecha <- as.Date( covca$fecha, "%d/%m/%Y")
@@ -92,6 +110,7 @@ covsp <- read_csv("Data Science/Covid19/Kaggle/nacional_covid19.csv")
 covsp$fecha <- as.Date( covsp$fecha, "%d/%m/%Y")
 covsp$Casos.nuevos <- c( NA, diff(covsp$casos))
 covsp$Altas.nuevas <- c( NA, diff(covsp$altas))
+covsp$Ucis.nuevas <- c( NA, diff(covsp$ingresos_uci))
 covsp$Fallecimientos.nuevos <- c( NA, diff(covsp$fallecimientos))
 
 ```
@@ -112,6 +131,7 @@ ggplot(covsp,aes(x=fecha,y=Casos.nuevos),na.rm = TRUE)+geom_line()+theme_tufte()
 ```{r altas, warning=FALSE}
 ggplot(covsp,aes(x=fecha,y=Altas.nuevas),na.rm = TRUE)+geom_line()+theme_tufte()+
   ggtitle( "Nuevas altas diarias en España") 
+
 ```
 
 
