@@ -1,5 +1,5 @@
 # covid_19
-Estudio global de la pandemia
+## Estudio global de la pandemia
   En este estudio queremos tener una visión por escalas desde nuestra Comunidad Autónoma Aragón, pasando a nivel nacional  para finalmente hacer un análisis internacional. Queremos entender el virus, su comportamiento e incidencia por países y la visualización de datos de cada uno de ellos en el tiempo.
 
   Lamentablemente nos centraremos en la mayor parte del  estudio en los fallecidos que a pesar de proporcionar cifras con retraso, son más fiables que las de contagios detectados de los que se estima que se detecta a nivel nacional una fracción inferior al 10%.
