@@ -1,0 +1,609 @@
+---
+title: "Covid19"
+author: "David Jimeno"
+date: "11/4/2020"
+output: pdf_document
+---
+
+## En este estudio queremos tener una visión por escalas desde
+## nuestra Comunidad Autónoma Aragón, pasando a nivel 
+## nacional  para finalmente hacer un análisis internacional.
+## Queremos entender el virus, su comportamiento e incidencia
+## por países y la visualización de datos de cada uno de ellos
+## en el tiempo.
+
+## Lamentablemente nos centraremos en la mayor parte del 
+## estudio en los fallecidos que a pesar de proporcionar cifras con 
+## retraso, son más fiables que las de contagios detectados de los 
+## que se estima que se detecta a nivel nacional una fracción 
+## inferior al 10%.
+
+```{r setup, include=FALSE}
+if(!require(flexdashboard)) install.packages("flexdashboard", repos = "http://cran.us.r-project.org")
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(highcharter)) install.packages("highcharter", repos = "http://cran.us.r-project.org")
+if(!require(countrycode)) install.packages("countrycode", repos = "http://cran.us.r-project.org")
+if(!require(janitor)) install.packages("janitor", repos = "http://cran.us.r-project.org")
+if(!require(ggthemes)) install.packages("ggthemes", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+if(!require(leaflet)) install.packages("leaflet", repos = "http://cran.us.r-project.org")
+if(!require(dslabs)) install.packages("dslabs", repos = "http://cran.us.r-project.org")
+if(!require(gridExtra)) install.packages("gridExtra", repos = "http://cran.us.r-project.org")
+```
+
+## Veamos la evolucíon de fallecidos diarios en Aragón.
+```{r global, warning=FALSE, include=FALSE}
+covar <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_fallecidos_long.csv")
+covar$fecha <- as.Date( covar$fecha, "%d/%m/%Y")
+covar <- covar%>% filter(CCAA == "Aragon") 
+covar$Fallecimientos.nuevos <- c( NA, diff(covar$total))
+
+```
+
+
+```{r fallecidos diarios en Aragón, warning=FALSE}
+ggplot(covar,aes(x=fecha,y=Fallecimientos.nuevos),na.rm =TRUE)+geom_line()+theme_tufte()+
+  ggtitle( "Evolucíon de fallecidos diarios en Aragón")
+
+```
+
+## Veamos a continuación la evolución fallecidos diarios en la Comunidad de Madrid.
+```{r fallecidos diarios en Cominidad Madrid, warning=FALSE, include=FALSE}
+covar <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_fallecidos_long.csv")
+covar$fecha <- as.Date( covar$fecha, "%d/%m/%Y")
+covar <- covar%>% filter(CCAA == "Madrid") 
+covar$Fallecimientos.nuevos <- c( NA, diff(covar$total))
+
+```
+```{r global2, warning=FALSE}
+ggplot(covar,aes(x=fecha,y=Fallecimientos.nuevos),na.rm =TRUE)+geom_line()+theme_tufte()+
+  ggtitle( "Fallecimientos diarios nuevos en la Comunidad de Madrid")
+
+```
+```{r Incremento, include=FALSE}
+ccaa_covid19_fallecidos_long <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_fallecidos_long.csv")
+ccaa_covid19_fallecidos_long$Incremento <- c( NA,diff(ccaa_covid19_fallecidos_long$total))
+ccaa_covid19_fallecidos_long[ccaa_covid19_fallecidos_long < 0] <- NA
+ccaa_covid19_fallecidos_long<-na.omit(ccaa_covid19_fallecidos_long)
+```
+```{r Incremento2}
+ccaa_covid19_fallecidos_long <- ccaa_covid19_fallecidos_long %>% filter( CCAA == "Total")
+ggplot(data=ccaa_covid19_fallecidos_long, aes(x = fecha,y = Incremento)) + 
+  geom_bar(stat="identity", position="dodge")+
+  ggtitle( "Fallecimientos diarios en España") 
+```
+```{r globaluci, include=FALSE}
+covca <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_uci_long.csv")
+covca$fecha <- as.Date( covca$fecha, "%d/%m/%Y")
+covca$Ucis.nuevos <- c( NA, diff(covca$total))
+covca[covca < 0] <- NA
+```
+
+```{r globaluci1, warning=FALSE}
+covca<-na.omit(covca)
+ggplot(covca, aes(fecha,Ucis.nuevos,group = 1)) +
+  geom_line() +
+  facet_wrap(vars(CCAA), scales = "free_y", ncol = 3, strip.position = "top") +
+  theme(strip.background = element_blank(), strip.placement = "outside")+
+  ggtitle( "Ingresos Ucis diarios comparativa por Comunidades Autónomas") 
+
+```
+
+```{r global2.0, include=FALSE}
+covca <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_fallecidos_long.csv")
+covca$fecha <- as.Date( covca$fecha, "%d/%m/%Y")
+covca$Fallecimientos.nuevos <- c( NA, diff(covca$total))
+covca[covca < 0] <- NA
+```
+
+```{r global3, warning=FALSE}
+covca<-na.omit(covca)
+ggplot(covca, aes(fecha,Fallecimientos.nuevos,group = 1)) +
+  geom_line() +
+  facet_wrap(vars(CCAA), scales = "free_y", ncol = 3, strip.position = "top") +
+  theme(strip.background = element_blank(), strip.placement = "outside")+
+  ggtitle( "Fallecimientos diarios comparativa por Comunidades Autónomas y Total") 
+
+```
+
+```{r nacional_covid19, warning=FALSE,, include=FALSE}
+covsp <- read_csv("Data Science/Covid19/Kaggle/nacional_covid19.csv")
+covsp$fecha <- as.Date( covsp$fecha, "%d/%m/%Y")
+covsp$Casos.nuevos <- c( NA, diff(covsp$casos))
+covsp$Altas.nuevas <- c( NA, diff(covsp$altas))
+covsp$Ucis.nuevas <- c( NA, diff(covsp$ingresos_uci))
+covsp$Fallecimientos.nuevos <- c( NA, diff(covsp$fallecimientos))
+
+```
+
+
+
+
+## Ahora continuaremos con el analisis a nivel nacional.
+
+### Nuevos casos diarios a nivel nacional.
+```{r casos, warning=FALSE}
+ggplot(covsp,aes(x=fecha,y=Casos.nuevos),na.rm = TRUE)+geom_line()+theme_tufte()+
+  ggtitle( "Nuevos casos diarios a nivel nacional") 
+```
+
+### Las nuevas altas diarias en España.
+
+```{r altas, warning=FALSE}
+ggplot(covsp,aes(x=fecha,y=Altas.nuevas),na.rm = TRUE)+geom_line()+theme_tufte()+
+  ggtitle( "Nuevas altas diarias en España") 
+
+```
+
+
+### Los nuevos fallecimientos por día España.
+
+```{r fallecimientos por día España, warning=FALSE}
+ggplot(covsp,aes(x=fecha,y=Fallecimientos.nuevos),na.rm = TRUE)+geom_line()+theme_tufte()+
+ggtitle( "Nuevos fallecimientos por día España")   
+```
+
+
+```{r covid_19_data, include=FALSE}
+corona <- read_csv("Data Science/Covid19/Kaggle/covid_19_data.csv")
+```
+
+```{r latest, include=FALSE}
+corona_latest <- corona %>% 
+filter(ObservationDate %in% max(corona$ObservationDate))
+```
+
+
+
+### Fallecidos por países.
+```{r}
+ corona28 <- corona_latest
+corona28_country <- corona28  %>% 
+group_by(`Country/Region`)  %>% 
+summarize(total_death = sum(Deaths),
+         total_recovered = sum(Recovered),
+         total_confirmed = sum(Confirmed))  %>% 
+mutate(recovery_rate = round(total_recovered / total_confirmed,2))
+corona28_country  %>% 
+filter(!`Country/Region` %in% 'Others')  %>% 
+arrange(desc(total_death)) %>% 
+head(11)  %>%
+ggplot() + geom_bar(aes(x=reorder(`Country/Region`, total_death),y= total_death), stat = "identity") +
+geom_label(aes(`Country/Region`, total_death, label = total_death)) +
+coord_flip() +
+theme_minimal() +
+labs(title =  "Principales países por total de casos fallecidos",
+    caption = "Fuente: Kaggle")
+```
+
+
+```{r time_series_covid_19_deaths.csv, include=FALSE}
+# lodaing Datasets
+df <- read.csv("Data Science/Covid19/Kaggle/covid_19_data.csv")
+df <- df %>% rename(
+  Date = ObservationDate,
+  Country = Country.Region,
+  State = Province.State,
+  Last_Update = Last.Update
+  )
+df$Date <- as.Date(df$Date, format = "%m/%d/%y")
+df_confirmed = read_csv("Data Science/Covid19/Kaggle/time_series_covid_19_confirmed.csv")
+
+df_confirmed <- df_confirmed %>% rename(
+  Country = 'Country/Region',
+)
+#head(df_confirmed)
+df_recovered = read_csv("Data Science/Covid19/Kaggle//time_series_covid_19_recovered.csv")
+
+df_recovered <- df_recovered %>% rename(
+  Country = `Country/Region`,
+)
+#head(df_recovered)
+df_deaths = read_csv("Data Science/Covid19/Kaggle/time_series_covid_19_deaths.csv")
+
+
+df_deaths <- df_deaths %>% rename(
+  Country = `Country/Region`,
+)
+#head(df_deaths)
+```
+
+```{r}
+filtered <- filter(df, df$Date==max(df$Date)) %>% group_by(Country) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths) , Recovered = sum(Recovered))
+murder_rate <- filtered$Deaths / filtered$Confirmed * 100
+filtered$murder_rate <- murder_rate
+filtered<- filtered%>% filter (Deaths >= 136)
+filtered <- filtered[order(filtered$murder_rate,decreasing = TRUE),]
+filtered[0:10,]
+```
+
+```{r}
+filtered <- filtered[order(filtered$murder_rate),]
+filtered[0:10,]
+```
+
+```{r murder_rate}
+ggplot(data=filtered, aes(x=reorder(Country,-murder_rate), y=murder_rate)) + 
+    geom_bar(stat="identity", position="dodge")+ theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))+
+ ggtitle("Letalidad por país")
+```
+
+```{r fig(14, 10) }
+
+China <- filter(df,Country == "Mainland China") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+
+```
+
+```{r China2, warning=FALSE}
+China2 <- filter(China, Cases =="Deaths",)
+China2$Fallecimientos.nuevos <- c( NA, diff(China2$Count))
+
+China_plot2<- ggplot(China2, aes(x= Date, y= Fallecimientos.nuevos ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Fallecimientos diarios nuevos en China", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+China_plot2
+
+```
+
+```{r China1, warning=FALSE}
+#Line Plot
+
+China_plot<- ggplot(China, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "China COVID-19 Situación", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+China_plot
+```
+```{r fig(16, 10) }
+
+italy <- filter(df,Country == "Italy") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+```
+
+```{r italy2, warning=FALSE}
+italy2 <- filter(italy, Cases =="Deaths",)
+italy2$Fallecimientos.nuevos <- c( NA, diff(italy2$Count))
+
+italy_plot2<- ggplot(italy2, aes(x= Date, y= Fallecimientos.nuevos ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Fallecimientos diarios nuevos en Italia", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+italy_plot2
+
+```
+```{r italy3, warning=FALSE}
+#Line Plot
+Italy_plot <- ggplot(italy, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Italia COVID-19 Situación", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+Italy_plot
+```
+
+
+```{r fig(17, 10) }
+
+US <- filter(df,Country == "US") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+```
+
+```{r US2, warning=FALSE}
+US2 <- filter(US, Cases =="Deaths",)
+US2$Fallecimientos.nuevos <- c( NA, diff(US2$Count))
+
+US_plot2<- ggplot(US2, aes(x= Date, y= Fallecimientos.nuevos ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Fallecimientos diarios nuevos en US", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+US_plot2
+
+```
+```{r US3, warning=FALSE}
+#Line Plot
+US_plot <- ggplot(US, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "US COVID-19 Situación", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+US_plot
+```
+
+```{r fig(17.1, 10) }
+
+Spain <- filter(df,Country == "Spain") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+```
+
+```{r Spain2, warning=FALSE}
+Spain2 <- filter(Spain, Cases =="Deaths",)
+Spain2$Fallecimientos.nuevos <- c( NA, diff(Spain2$Count))
+
+Spain_plot2<- ggplot(Spain2, aes(x= Date, y= Fallecimientos.nuevos ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Fallecimientos diarios nuevos en España", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+Spain_plot2
+
+```
+
+```{r fig(17.2.0, 10), warning=FALSE}
+#Line Plot
+Spain_plot <- ggplot(Spain, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "España COVID-19 Situación", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+Spain_plot
+```
+```{r fig(17.2, 11) }
+
+France <- filter(df,Country == "France") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+```
+
+```{r US2.0, warning=FALSE}
+France2 <- filter(France, Cases =="Deaths",)
+France2$Fallecimientos.nuevos <- c( NA, diff(France2$Count))
+France_plot2<- ggplot(France2, aes(x= Date, y= Fallecimientos.nuevos ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Fallecimientos diarios nuevos en Francia", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+France_plot2
+
+```
+```{r fig(17.2, 10) }
+#Line Plot
+France_plot <- ggplot(France, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Francia COVID-19 Situacion", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+France_plot
+```
+
+```{r fig(18, 10) }
+
+Iran <- filter(df,Country == "Iran") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+```
+```{r Iran2, warning=FALSE}
+Iran2 <- filter(Iran, Cases =="Deaths",)
+Iran2$Fallecimientos.nuevos <- c( NA, diff(Iran2$Count))
+
+Iran_plot2<- ggplot(Iran2, aes(x= Date, y= Fallecimientos.nuevos ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Fallecimientos diarios nuevos en Iran", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+Iran_plot2
+
+```
+```{r fig(18.1, 10) }
+#Line Plot
+Iran_plot <- ggplot(Iran, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Iran's COVID-19 Status", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+Iran_plot
+```
+
+```{r fig(19, 10)}
+
+UK <- filter(df,Country == "UK") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+```
+```{r UK2, warning=FALSE}
+UK2 <- filter(UK, Cases =="Deaths",)
+UK2$Fallecimientos.nuevos <- c( NA, diff(UK2$Count))
+
+UK_plot2<- ggplot(UK2, aes(x= Date, y= Fallecimientos.nuevos ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Fallecimientos diarios nuevos en UK", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+UK_plot2
+
+```
+```{r fig(19.2, 10)}
+#Line Plot
+UK_plot <- ggplot(UK, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "UK's COVID-19 Status", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+UK_plot
+```
+
+```{r fig(20, 10)}
+
+Germany <- filter(df,Country == "Germany") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+```
+
+```{r Germany2, warning=FALSE}
+Germany2 <- filter(Germany, Cases =="Deaths",)
+Germany2$Fallecimientos.nuevos <- c( NA, diff(Germany2$Count))
+
+Germany_plot2<- ggplot(Germany2, aes(x= Date, y= Fallecimientos.nuevos ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Fallecimientos diarios nuevos en Alemania", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+Germany_plot2
+
+```
+
+```{r fig(20.1, 10)}
+#Line Plot
+Germany_plot <- ggplot(Germany, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Germany's COVID-19 Status", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+Germany_plot
+```
+
+```{r fig(20.1, 11)}
+
+South_Korea <- filter(df,Country == "South Korea") %>% group_by(Date) %>% 
+summarise(Confirmed =  sum(Confirmed) , Deaths = sum(Deaths), Recovered = sum(Recovered)) %>% 
+gather(key = Cases, value = Count, c(Confirmed,Deaths,Recovered))
+```
+
+```{r South_Korea2, warning=FALSE}
+South_Korea2 <- filter(South_Korea, Cases =="Deaths",)
+South_Korea2$Fallecimientos.nuevos <- c( NA, diff(South_Korea2$Count))
+
+South_Korea_plot2<- ggplot(South_Korea2, aes(x= Date, y= Fallecimientos.nuevos ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Fallecimientos diarios nuevos en Corea del Sur", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+South_Korea_plot2
+
+```
+```{r fig(20.1.2, 11)}
+#Line Plot
+South_Korea_plot <- ggplot(South_Korea, aes(x= Date, y= Count ,fill = Cases, color = Cases , group=Cases ))+
+           geom_line(aes(colour = Cases))+geom_point()+
+           scale_fill_manual(values = c("blue","red","green"))+scale_colour_manual(values = c("blue","red","green"))+
+           labs(x="Timeline", y="Number of Cases",title = "Corea del Sur COVID-19 Situación", fill = 'Cases')+
+           theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 15),
+                 text = element_text(hjust = 1,face = "bold", size = 15),
+                 axis.title.x = element_text(hjust = 0.5),
+                 axis.title.y = element_text(hjust = 0.5))
+         
+South_Korea_plot
+```
+
+
+```{r fig(12, 8) }
+
+data <- filter(df_deaths,df_deaths[,ncol(df_deaths)]>0)
+world <- ggplot() +
+  borders("world", colour = "gray85", fill = "gray80") +theme_map()
+map_death <- world +
+  geom_point(aes(x = data$Long, y = data$Lat, size = as.integer(unlist(data[,ncol(df_deaths)]))),
+             data = data, 
+             colour = 'red', alpha = .5) +
+  scale_size_continuous(range = c(1, 15), 
+                        breaks = c(5000, 10000, 15000, 20000)) +
+  labs(size = 'Fallecidos')+   theme( plot.title = element_text(hjust = 0.5 , face = "bold", size = 10),
+         text = element_text(hjust = 1,face = "bold", size = 10))
+map_death
+```
+
+
+Links
+====================
+### Gracias especialmente a datadista por mantener base de datos actualizada del 
+### Ministerio de Sanidad.
+
+### Enlaces a bases de datos.
+
+### https://www.kaggle.com/sudalairajkumar/novel-corona-virus-2019-dataset/download/uMF6QnlPB7ScS6BxTw1I%2Fversions%2FXDJvWcErFIHv3R7zGrDD%2Ffiles%2Fcovid_19_data.csv?datasetVersionNumber=56
+
+### https://www.kaggle.com/sudalairajkumar/novel-corona-virus-2019-dataset/download/uMF6QnlPB7ScS6BxTw1I%2Fversions%2FXDJvWcErFIHv3R7zGrDD%2Ffiles%2Ftime_series_covid_19_confirmed.csv?datasetVersionNumber=56
+
+### https://www.kaggle.com/sudalairajkumar/novel-corona-virus-2019-dataset/download/uMF6QnlPB7ScS6BxTw1I%2Fversions%2FXDJvWcErFIHv3R7zGrDD%2Ffiles%2Ftime_series_covid_19_deaths.csv?datasetVersionNumber=56
+
+### https://www.kaggle.com/sudalairajkumar/novel-corona-virus-2019-dataset/download/uMF6QnlPB7ScS6BxTw1I%2Fversions%2FXDJvWcErFIHv3R7zGrDD%2Ffiles%2Ftime_series_covid_19_recovered.csv?datasetVersionNumber=56
+
+### https://raw.githubusercontent.com/datadista/datasets/master/COVID%2019/ccaa_covid19_fallecidos_long.csv
+
+### https://raw.githubusercontent.com/datadista/datasets/master/COVID%2019/ccaa_covid19_fallecidos_long.csv
+
++ [Map tracks coronavirus outbreak in near real time](https://hub.jhu.edu/2020/01/23/coronavirus-outbreak-mapping-tool-649-em1-art1-dtd-health/)
++ [Coronavirus COVID-19 Global Cases by Johns Hopkins CSSE](https://www.arcgis.com/apps/opsdashboard/index.html#/bda7594740fd40299423467b48e9ecf6)
++ [Coronavirus disease (COVID-19) outbreak - WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019)
++ [coronavirus R package provides a tidy format dataset](https://github.com/RamiKrispin/coronavirus)
++ [An AI Epidemiologist Sent the First Warnings of the Wuhan Virus](https://www.wired.com/story/ai-epidemiologist-wuhan-public-health-warnings/)
