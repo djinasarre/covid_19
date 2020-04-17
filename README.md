@@ -4,9 +4,10 @@
 
   Lamentablemente nos centraremos en la mayor parte del  estudio en los fallecidos que a pesar de proporcionar cifras con retraso, son más fiables que las de contagios detectados de los que se estima que se detecta a nivel nacional una fracción inferior al 10%.
   
-  Links
+ Links
 ====================
-### Gracias especialmente a datadista por mantener base de datos actualizada del Ministerio de Sanidad.
+### Gracias especialmente a datadista por mantener base de datos actualizada del 
+### Ministerio de Sanidad.
 
 ### Enlaces a bases de datos.
 
@@ -20,7 +21,10 @@
 
 ### https://raw.githubusercontent.com/datadista/datasets/master/COVID%2019/ccaa_covid19_fallecidos_long.csv
 
-### https://raw.githubusercontent.com/datadista/datasets/master/COVID%2019/ccaa_covid19_fallecidos_long.csv
+### https://raw.githubusercontent.com/datadista/datasets/master/COVID%2019/nacional_covid19.csv
+
+### https://raw.githubusercontent.com/datadista/datasets/master/COVID%2019/ccaa_covid19_uci_long.csv
+
 
 + [Map tracks coronavirus outbreak in near real time](https://hub.jhu.edu/2020/01/23/coronavirus-outbreak-mapping-tool-649-em1-art1-dtd-health/)
 + [Coronavirus COVID-19 Global Cases by Johns Hopkins CSSE](https://www.arcgis.com/apps/opsdashboard/index.html#/bda7594740fd40299423467b48e9ecf6)
