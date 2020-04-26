@@ -19,6 +19,8 @@
 
 ### https://www.kaggle.com/sudalairajkumar/novel-corona-virus-2019-dataset/download/uMF6QnlPB7ScS6BxTw1I%2Fversions%2FXDJvWcErFIHv3R7zGrDD%2Ffiles%2Ftime_series_covid_19_recovered.csv?datasetVersionNumber=56
 
+### https://raw.githubusercontent.com/datadista/datasets/master/COVID%2019/ccaa_covid19_hospitalizados_long.csv
+
 ### https://raw.githubusercontent.com/datadista/datasets/master/COVID%2019/ccaa_covid19_fallecidos_long.csv
 
 ### https://raw.githubusercontent.com/datadista/datasets/master/COVID%2019/nacional_covid19.csv
