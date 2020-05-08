@@ -70,7 +70,7 @@ ac
 ```
 ### Media Nacional incrementos porcentuales diario confirmados ultima semana 
 ```{r Media incrementos confirmados ultima semana, warning=FALSE}
-sp <- subset(covar, fecha>= "2020-04-30" & fecha <= "2020-05-06")
+sp <- subset(covar, fecha>= "2020-05-02" & fecha <= "2020-05-08")
 
 spain<- sp%>% group_by(fecha) %>% summarize(total_casos = sum(total))
 
@@ -91,7 +91,7 @@ ac
 
 ```{r Spain2.1.0, warning=FALSE}
 
-sp <- subset(covar, fecha>= "2020-03-08" & fecha <= "2020-03-14")
+sp <- subset(covar, fecha>= "2020-03-06" & fecha <= "2020-03-12")
 
 spain<- sp%>% group_by(CCAA,fecha) %>% summarize(total_casos = sum(total))
 
@@ -118,7 +118,7 @@ Spain1
 
 ```{r Spain2.2.0, warning=FALSE}
 
-sp <- subset(covar, fecha>= "2020-05-01" & fecha <= "2020-05-07")
+sp <- subset(covar, fecha>= "2020-05-02" & fecha <= "2020-05-08")
 
 spain<- sp%>% group_by(CCAA,fecha) %>% summarize(total_casos = sum(total))
 
