@@ -1,7 +1,7 @@
 ---
 title: "Covid19"
 author: "David Jimeno"
-date: "07/5/2020"
+date: "10/5/2020"
 output: pdf_document
 ---
 
@@ -29,7 +29,7 @@ if(!require(gridExtra)) install.packages("gridExtra", repos = "http://cran.us.r-
 
 ## Veamos la evolucíon de Casos diarios en Aragón.
 ```{r global, warning=FALSE, include=FALSE}
-covar <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_casos_long.csv")
+covar <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_confirmados_pcr_long.csv")
 covar1 <- covar
 covar1$fecha <- as.Date( covar1$fecha, "%d/%m/%Y")
 covar1 <- covar1%>% filter(CCAA == "Aragon") 
@@ -49,7 +49,24 @@ spain$Casos.nuevos <- c( NA, diff(spain$total_casos))
 ggplot(spain,aes(x=fecha,y=Casos.nuevos),na.rm =TRUE)+geom_bar(stat="identity", position="dodge")+theme_tufte()+
   ggtitle( "Evolucíon de Casos diarios en España")
 ```
+### Media Nacional incrementos porcentuales diario confirmados dos semana antes confinamiento
+```{r Media incrementos confirmados dos semana ultima semana, warning=FALSE}
 
+sp <- subset(covar, fecha>= "2020-02-28" & fecha <= "2020-03-05")
+
+spain<- sp%>% group_by(fecha) %>% summarize(total_casos = sum(total))
+
+
+
+spain$total.nuevos <- c( NA, diff(spain$total_casos))
+
+spain[is.na(spain)] <- 0
+Spain1<- spain %>% 
+ mutate(pct_change = ((total.nuevos/lag(total_casos))) * 100)
+Spain1[is.na(Spain1)] <- 0
+ac<-sum(Spain1$pct_change)/7
+ac
+```
 ### Media Nacional incrementos porcentuales diario confirmados semana antes confinamiento
 ```{r Media incrementos confirmados semana ultima semana, warning=FALSE}
 
@@ -69,8 +86,8 @@ ac<-sum(Spain1$pct_change)/7
 ac
 ```
 ### Media Nacional incrementos porcentuales diario confirmados ultima semana 
-```{r Media incrementos confirmados ultima semana, warning=FALSE}
-sp <- subset(covar, fecha>= "2020-05-02" & fecha <= "2020-05-08")
+```{r Media incrementos2 confirmados ultima semana, warning=FALSE}
+sp <- subset(covar, fecha>= "2020-05-03" & fecha <= "2020-05-09")
 
 spain<- sp%>% group_by(fecha) %>% summarize(total_casos = sum(total))
 
@@ -118,7 +135,7 @@ Spain1
 
 ```{r Spain2.2.0, warning=FALSE}
 
-sp <- subset(covar, fecha>= "2020-05-02" & fecha <= "2020-05-08")
+sp <- subset(covar, fecha>= "2020-05-04" & fecha <= "2020-05-10")
 
 spain<- sp%>% group_by(CCAA,fecha) %>% summarize(total_casos = sum(total))
 
@@ -141,7 +158,7 @@ View(Spain1)
 ### Veamos que Comunidades Autonómas deberían de confinarse
 
 ```{r detector de CCAA, warning=FALSE}
-detector <- filter(Spain1, pct_change >=36.25827 )
+detector <- filter(Spain1, pct_change >=36.3816 )
 detector
 
 ```
