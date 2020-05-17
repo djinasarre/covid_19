@@ -1,0 +1,164 @@
+---
+title: "Covid19"
+author: "David Jimeno"
+date: "17/5/2020"
+output: pdf_document
+---
+
+
+
+
+### Creamos un detector, para predecir con una semana de antelación si se esta 
+### aumentando el número de casos diarios como para llevarnos a un nuevo confinamiento
+### total nacional o parcial en una comunidad autónoma.
+
+```{r setup, include=FALSE}
+if(!require(flexdashboard)) install.packages("flexdashboard", repos = "http://cran.us.r-project.org")
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(highcharter)) install.packages("highcharter", repos = "http://cran.us.r-project.org")
+if(!require(countrycode)) install.packages("countrycode", repos = "http://cran.us.r-project.org")
+if(!require(janitor)) install.packages("janitor", repos = "http://cran.us.r-project.org")
+if(!require(ggthemes)) install.packages("ggthemes", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+if(!require(leaflet)) install.packages("leaflet", repos = "http://cran.us.r-project.org")
+if(!require(dslabs)) install.packages("dslabs", repos = "http://cran.us.r-project.org")
+if(!require(gridExtra)) install.packages("gridExtra", repos = "http://cran.us.r-project.org")
+```
+
+## Veamos la evolucíon de Casos diarios en Aragón.
+```{r global, warning=FALSE, include=FALSE}
+covar <- read_csv("Data Science/Covid19/Kaggle/ccaa_covid19_confirmados_pcr_long.csv")
+covar1 <- covar
+covar1$fecha <- as.Date( covar1$fecha, "%d/%m/%Y")
+covar1 <- covar1%>% filter(CCAA == "Aragon") 
+
+covar1$Casos.nuevos <- c( NA, diff(covar1$total))
+
+```
+
+
+```{r fallecidos diarios en Aragón, warning=FALSE}
+ggplot(covar1,aes(x=fecha,y=Casos.nuevos),na.rm =TRUE)+geom_bar(stat="identity", position="dodge")+theme_tufte()+
+  ggtitle( "Evolucíon de Casos diarios en Aragón")
+```
+```{r Media incrementos confirmados semana antes confinamiento, warning=FALSE}
+spain<- covar%>% group_by(fecha) %>% summarize(total_casos = sum(total))
+spain$Casos.nuevos <- c( NA, diff(spain$total_casos))
+ggplot(spain,aes(x=fecha,y=Casos.nuevos),na.rm =TRUE)+geom_bar(stat="identity", position="dodge")+theme_tufte()+
+  ggtitle( "Evolucíon de Casos diarios en España")
+```
+### Media Nacional incrementos porcentuales diario confirmados dos semana antes confinamiento
+```{r Media incrementos confirmados dos semana ultima semana, warning=FALSE}
+
+sp <- subset(covar, fecha>= "2020-02-28" & fecha <= "2020-03-05")
+
+spain<- sp%>% group_by(fecha) %>% summarize(total_casos = sum(total))
+
+
+
+spain$total.nuevos <- c( NA, diff(spain$total_casos))
+
+spain[is.na(spain)] <- 0
+Spain1<- spain %>% 
+ mutate(pct_change = ((total.nuevos/lag(total_casos))) * 100)
+Spain1[is.na(Spain1)] <- 0
+ac<-sum(Spain1$pct_change)/7
+ac
+```
+### Media Nacional incrementos porcentuales diario confirmados semana antes confinamiento
+```{r Media incrementos confirmados semana ultima semana, warning=FALSE}
+
+sp <- subset(covar, fecha>= "2020-03-06" & fecha <= "2020-03-12")
+
+spain<- sp%>% group_by(fecha) %>% summarize(total_casos = sum(total))
+
+
+
+spain$total.nuevos <- c( NA, diff(spain$total_casos))
+
+spain[is.na(spain)] <- 0
+Spain1<- spain %>% 
+ mutate(pct_change = ((total.nuevos/lag(total_casos))) * 100)
+Spain1[is.na(Spain1)] <- 0
+ac<-sum(Spain1$pct_change)/7
+ac
+```
+### Media Nacional incrementos porcentuales diario confirmados ultima semana 
+```{r Media incrementos2 confirmados ultima semana, warning=FALSE}
+sp <- subset(covar, fecha>= "2020-05-11" & fecha <= "2020-05-17")
+
+spain<- sp%>% group_by(fecha) %>% summarize(total_casos = sum(total))
+
+
+
+spain$total.nuevos <- c( NA, diff(spain$total_casos))
+
+spain[is.na(spain)] <- 0
+Spain1<- spain %>% 
+ mutate(pct_change = ((total.nuevos/lag(total_casos))) * 100)
+Spain1[is.na(Spain1)] <- 0
+ac<-sum(Spain1$pct_change)/7
+ac
+
+```
+
+### Incrementos porcentuales casos confirmados diarios por CCAA
+
+```{r Spain2.1.0, warning=FALSE}
+
+sp <- subset(covar, fecha>= "2020-03-06" & fecha <= "2020-03-12")
+
+spain<- sp%>% group_by(CCAA,fecha) %>% summarize(total_casos = sum(total))
+
+ 
+spain$total.nuevos <- c( NA, diff(spain$total_casos))
+
+spain$total.nuevos<-ifelse(spain$total.nuevos >= 0, spain$total.nuevos, 0)
+
+
+
+spain[is.na(spain)] <- 0
+
+Spain1<- spain %>% 
+ mutate(pct_change = ((total.nuevos/lag(total_casos))) * 100)
+Spain1[is.na(Spain1)] <- 0
+View(Spain1)
+Spain1 <- Spain1%>% group_by(CCAA)%>% summarize(pct_change = sum(pct_change/7))
+Spain1
+
+```
+
+
+### Incrementos porcentuales casos confirmados diarios por CCAA última semana
+
+```{r Spain2.2.0, warning=FALSE}
+
+sp <- subset(covar, fecha>= "2020-05-11" & fecha <= "2020-05-17")
+
+spain<- sp%>% group_by(CCAA,fecha) %>% summarize(total_casos = sum(total))
+
+ 
+spain$total.nuevos <- c( NA, diff(spain$total_casos))
+
+spain$total.nuevos<-ifelse(spain$total.nuevos >= 0, spain$total.nuevos, 0)
+
+
+
+spain[is.na(spain)] <- 0
+
+Spain1<- spain %>% 
+ mutate(pct_change = ((total.nuevos/lag(total_casos))) * 100)
+Spain1[is.na(Spain1)] <- 0
+Spain1 <- Spain1%>% group_by(CCAA)%>% summarize(pct_change = sum(pct_change/7))
+Spain1
+View(Spain1)
+```
+### Veamos que Comunidades Autonómas deberían de confinarse
+
+```{r detector de CCAA, warning=FALSE}
+detector <- filter(Spain1, pct_change >=36.3816 )
+detector
+
+```
